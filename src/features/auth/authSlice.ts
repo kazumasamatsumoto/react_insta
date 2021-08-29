@@ -20,6 +20,8 @@ export const fetchAsyncLogin = createAsyncThunk(
     // 第一引数はaxiosでアクセスするURL
     // 第二引数は渡すデータ
     // 第三引数はheaders
+    // postやputの場合はContent-Typeが必要
+    // getの場合は不要
     const res = await axios.post(`${apiUrl}authen/jwt/create`, authen, {
       headers: {
         "Content-Type": "application/json",
@@ -54,7 +56,7 @@ export const fetchAsyncCreateProf = createAsyncThunk(
     const res = await axios.post(`${apiUrl}api/profile/`, nickName, {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `JWT ${localStorage.localJWT},`
+        Authorization: `JWT ${localStorage.localJWT}`,
       },
     });
     return res.data;
@@ -92,7 +94,7 @@ export const fetchAsyncUpdateProf = createAsyncThunk(
 export const fetchAsyncGetMyProf = createAsyncThunk("profile/get", async () => {
   const res = await axios.get(`${apiUrl}api/myprofile/`, {
     headers: {
-      Authrization: `JWT ${localStorage.localJWT}`,
+      Authorization: `JWT ${localStorage.localJWT}`,
     },
   });
   // djangoで配列で返しているため0番目に設定する必要がある
@@ -100,7 +102,7 @@ export const fetchAsyncGetMyProf = createAsyncThunk("profile/get", async () => {
 });
 
 // 存在するプロフィール一覧を取得する
-export const fetchAsyncGetProps = createAsyncThunk('profile/get', async () => {
+export const fetchAsyncGetProfs = createAsyncThunk('profiles/get', async () => {
   const res = await axios.get(`${apiUrl}api/profile`, {
     headers: {
       Authorization: `JWT ${localStorage.localJWT}`,
@@ -164,6 +166,28 @@ export const authSlice = createSlice({
       state.myprofile.nickName = action.payload;
     },
   },
+  // 後処理（非同期関数の実施の処理中、成功後、失敗後など色々設定ができます。
+  // 今回はfulfilled成功時のみ
+  extraReducers: (builder) => {
+    builder.addCase(fetchAsyncLogin.fulfilled, (state, action) => {
+      localStorage.setItem("localJWT", action.payload.access);
+    });
+    builder.addCase(fetchAsyncCreateProf.fulfilled, (state, action) => {
+      state.myprofile = action.payload;
+    });
+    builder.addCase(fetchAsyncGetMyProf.fulfilled, (state, action) => {
+      state.myprofile = action.payload;
+    });
+    builder.addCase(fetchAsyncGetProfs.fulfilled, (state, action) => {
+      state.profiles = action.payload;
+    });
+    builder.addCase(fetchAsyncUpdateProf.fulfilled, (state, action) => {
+      state.myprofile = action.payload;
+      state.profiles = state.profiles.map((prof) =>
+        prof.id === action.payload.id ? action.payload : prof
+      );
+    });
+  },
 });
 
 // reactのコンポーネントで使用できるようにexportを実施
@@ -178,5 +202,13 @@ export const {
   resetOpenProfile,
   editNickname,
 } = authSlice.actions;
-export const selectCount = (state: RootState) => state.counter.value;
+
+export const selectIsLoadingAuth = (state: RootState) =>
+  state.auth.isLoadingAuth;
+export const selectOpenSignIn = (state: RootState) => state.auth.openSignIn;
+export const selectOpenSignUp = (state: RootState) => state.auth.openSignUp;
+export const selectOpenProfile = (state: RootState) => state.auth.openProfile;
+export const selectProfile = (state: RootState) => state.auth.myprofile;
+export const selectProfiles = (state: RootState) => state.auth.profiles;
+
 export default authSlice.reducer;

@@ -1,9 +1,13 @@
 import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
 import counterReducer from '../features/counter/counterSlice';
+// カスタムスライスをimport
+import authReducer from '../features/auth/authSlice';
 
+// sliceはこちらで登録する必要がある
 export const store = configureStore({
   reducer: {
     counter: counterReducer,
+    auth: authReducer,
   },
 });
 
