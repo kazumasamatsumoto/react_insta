@@ -3,7 +3,112 @@ import { RootState } from '../../app/store';
 import axios from 'axios'
 import { PROPS_AUTHEN, PROPS_PROFILE, PROPS_NICKNAME } from "../types"
 
-const apuUrl = process.env.REACT_APP_DEV_API_URL;
+const apiUrl = process.env.REACT_APP_DEV_API_URL;
+
+// 非同期の関数はSliceの外で実装します
+
+// ReduxToolKitのcreateAsyncThunkを使用する
+// 非同期関数は成功したとき、失敗したとき、実行中の3つの状態で確認することができる
+// それぞれの状態で後処理を記載することができてその後処理はextraReducerとする
+export const fetchAsyncLogin = createAsyncThunk(
+  // actionの名前（好きな名前でOK）
+  "auth/post",
+  // asyncを使用することで非同期処理を同期処理に変更する
+  // authenは引数、型はPROPS_AUTHEN
+  // componentからemailとpasswordに入力して実行
+  async (authen: PROPS_AUTHEN) => {
+    // 第一引数はaxiosでアクセスするURL
+    // 第二引数は渡すデータ
+    // 第三引数はheaders
+    const res = await axios.post(`${apiUrl}authen/jwt/create`, authen, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    // JWTトークンを返り値とする
+    return res.data
+  }
+)
+
+// 新規ユーザーを作成する関数
+// createAsyncThunkの第一引数は名前、第二引数は非同期を同期処理してその返り値
+export const fetchAsyncRegister = createAsyncThunk(
+  "auth/register",
+  async (auth: PROPS_AUTHEN) => {
+    const res = await axios.post(`${apiUrl}api/register/`, auth, {
+      headers: {
+        "Content-Type": "application/json",
+      }
+    });
+    return res.data;
+  }
+);
+
+// プロファイルの作成に関する非同期処理
+// プロファイルの編集にはログインが必須となるためheadersの中にAuthorizationが必要
+// componentから使用してnickNameを引数として受け取る
+// createAsyncThunkの第二引数として返り値が必要で、その返り値をdispatchで更新するstateとなる
+export const fetchAsyncCreateProf = createAsyncThunk(
+  "profile/post",
+  async (nickName: PROPS_NICKNAME) => {
+    const res = await axios.post(`${apiUrl}api/profile/`, nickName, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `JWT ${localStorage.localJWT},`
+      },
+    });
+    return res.data;
+  }
+)
+
+// プロフィールを更新する関数
+// 
+export const fetchAsyncUpdateProf = createAsyncThunk(
+  "profile/put",
+  async (profile: PROPS_PROFILE) => {
+    // 新しくフォームデータを作成する
+    const uploadData = new FormData();
+    // フォームデータはappendで色々と追加することが可能になるためその都度追加していく
+    // ニックネームの追加
+    uploadData.append("nickName", profile.nickName);
+    // プロフィールのイメージ画像がある時だけ画像と、画像の名前を追加する
+    profile.img && uploadData.append("img", profile.img, profile.img.name);
+    const res = await axios.put(
+      // プロフィールの更新はidを指定する必要があるため引数の中のidを入れる
+      `${apiUrl}api/profile/${profile.id}/`,
+      uploadData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `JWT ${localStorage.localJWT}`,
+        },
+      }
+    );
+    return res.data;
+  }
+);
+
+// 現在ログインしているユーザーの取得
+export const fetchAsyncGetMyProf = createAsyncThunk("profile/get", async () => {
+  const res = await axios.get(`${apiUrl}api/myprofile/`, {
+    headers: {
+      Authrization: `JWT ${localStorage.localJWT}`,
+    },
+  });
+  // djangoで配列で返しているため0番目に設定する必要がある
+  return res.data[0]
+});
+
+// 存在するプロフィール一覧を取得する
+export const fetchAsyncGetProps = createAsyncThunk('profile/get', async () => {
+  const res = await axios.get(`${apiUrl}api/profile`, {
+    headers: {
+      Authorization: `JWT ${localStorage.localJWT}`,
+    },
+  });
+  return res.data;
+});
+
 
 export const authSlice = createSlice({
   name: 'auth',
@@ -61,6 +166,7 @@ export const authSlice = createSlice({
   },
 });
 
+// reactのコンポーネントで使用できるようにexportを実施
 export const {
   fetchCredStart,
   fetchCredEnd,
