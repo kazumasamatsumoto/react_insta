@@ -52,6 +52,7 @@ const customStyles = {
 };
 
 // Reactのfunctional component typescriptの場合はReact.FCを追加
+// 動作確認するときはReact Tool Kitを使用して確認していく必要があります。（特に開発時に実行履歴を確認することができます）
 const Auth: React.FC = () => {
   // reactのモーダルを宣言index.tsxでの対応させているエレメントのタグがrootなので今回はroot
   Modal.setAppElement("#root");
@@ -66,10 +67,10 @@ const Auth: React.FC = () => {
   return (
     // フラグメントに変更しておく
     <>
-    {/* 新規ユーザー作成用のモーダルを作成する */}
+      {/* 新規ユーザー作成用のモーダルを作成する */}
       <Modal
-      // isOpen=true or false
-      // 表示非表示redux tool kitで管理してます。
+        // isOpen=true or false
+        // 表示非表示redux tool kitで管理してます。
         isOpen={openSignUp}
         // モーダル以外の場所をクリックしたときに呼ばれる関数を定義できる
         // dispatch経由でresetOpenSignUpを呼び出す
@@ -82,7 +83,7 @@ const Auth: React.FC = () => {
       >
         {/* フォームのバリデーションを実施するためにFormikとYupを使用 */}
         <Formik
-        // 最初の初期状態のエラーのステートを定義
+          // 最初の初期状態のエラーのステートを定義
           initialErrors={{ email: "required" }}
           // 入力フォームで制御するパラメータを定義、今回はemailとpasswordをバリデーションを実施する
           initialValues={{ email: "", password: "" }}
@@ -119,7 +120,7 @@ const Auth: React.FC = () => {
               .email("email format is wrong")
               // 何かしらの入力が必須にしています。
               .required("email is must"),
-              // パスワードは必須にして最小文字を4文字に設定しています。
+            // パスワードは必須にして最小文字を4文字に設定しています。
             password: Yup.string().required("password is must").min(4),
           })}
         >
@@ -158,7 +159,7 @@ const Auth: React.FC = () => {
                   {/* emailの入力フォーム */}
                   {/* マテリアルUIのTextFieldを使用 */}
                   <TextField
-                  // デフォルトで表示される文字
+                    // デフォルトで表示される文字
                     placeholder="email"
                     type="input"
                     name="email"
@@ -225,7 +226,7 @@ const Auth: React.FC = () => {
       </Modal>
 
       <Modal
-      // モーダルを開く条件
+        // モーダルを開く条件
         isOpen={openSignIn}
         // モーダル以外の箇所をクリックした時
         onRequestClose={async () => {
@@ -263,7 +264,7 @@ const Auth: React.FC = () => {
             password: Yup.string().required("password is must").min(4),
           })}
         >
-                    {/* Formikの中にFormを作成する */}
+          {/* Formikの中にFormを作成する */}
           {/* アロー関数の形式でFormikで事前に準備されている引数 */}
           {({
             handleSubmit,
@@ -324,7 +325,9 @@ const Auth: React.FC = () => {
                   <span
                     className={styles.auth_text}
                     onClick={async () => {
+                      // モーダルを閉じて
                       await dispatch(resetOpenSignIn());
+                      // サインアップのモーダルを開く
                       await dispatch(setOpenSignUp());
                     }}
                   >
