@@ -203,6 +203,8 @@ export const {
   editNickname,
 } = authSlice.actions;
 
+// Redux ToolkitのuseSelectorを使用してstoreの中のsliceの中のstateを取得する
+// これでcomponentからstateにアクセスすることができます。
 export const selectIsLoadingAuth = (state: RootState) =>
   state.auth.isLoadingAuth;
 export const selectOpenSignIn = (state: RootState) => state.auth.openSignIn;
