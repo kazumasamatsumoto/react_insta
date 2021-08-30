@@ -21,9 +21,13 @@ export const fetchAsyncGetPosts = createAsyncThunk("post/get", async () => {
 // 新しい投稿を実施する
 export const fetchAsyncNewPost = createAsyncThunk(
   "post/post",
+  // newPostをreact componentから受け取ることができるようにする
   async (newPost: PROPS_NEWPOST) => {
+    // フォームデータを新規に作成する
     const uploadData = new FormData();
+    // appendを使用してタイトルを追加する
     uploadData.append("title", newPost.title);
+    // 画像をuploadDataにappendする
     newPost.img && uploadData.append("img", newPost.img, newPost.img.name);
     const res = await axios.post(apiUrlPost, uploadData, {
       headers: {
@@ -39,22 +43,32 @@ export const fetchAsyncNewPost = createAsyncThunk(
 export const fetchAsyncPatchLiked = createAsyncThunk(
   "post/patch",
   async (liked: PROPS_LIKED) => {
+    // 現在のいいねしているユーザーリストを格納
     const currentLiked = liked.current;
+    // アップロードするデータの箱
     const uploadData = new FormData();
 
+    // いいねボタンが押されている場合は解除
     let isOverlapped = false;
+    // 現在のいいねのIDの配列を一つずつ確認していく
     currentLiked.forEach((current) => {
       if (current === liked.new) {
         isOverlapped = true;
       } else {
+        // 新しく押した場合はlikedのデータを追加する
         uploadData.append("liked", String(current));
       }
     });
 
+    // 新しくいいねを実行した場合
     if (!isOverlapped) {
       uploadData.append("liked", String(liked.new));
     } else if (currentLiked.length === 1) {
+      // すでにいいねを実行しているときで現在のいいねのIDが1つの時
+      // currentをからにするのではなくそもそもの投稿のを初期化する
+      // するといいねがない状態で格納されるといった形になります。
       uploadData.append("title", liked.title);
+      // なのでputで新規登録を実施します。
       const res = await axios.put(`${apiUrlPost}${liked.id}/`, uploadData, {
         headers: {
           "Content-Type": "application/json",
@@ -63,6 +77,7 @@ export const fetchAsyncPatchLiked = createAsyncThunk(
       });
       return res.data;
     }
+    // 現在複数ある状態ではpatchで更新します。
     const res = await axios.patch(`${apiUrlPost}${liked.id}/`, uploadData, {
       headers: {
         "Content-Type": "application/json",
@@ -156,24 +171,28 @@ export const postSlice = createSlice({
     builder.addCase(fetchAsyncNewPost.fulfilled, (state, action) => {
       return {
         ...state,
+        // 現在のステートを配列で管理して、投稿した内容を配列の最後に追加する
         posts: [...state.posts, action.payload],
       };
     });
     builder.addCase(fetchAsyncGetComments.fulfilled, (state, action) => {
       return {
         ...state,
+        // コメントを取得した内容をstoreのコメントに格納する
         comments: action.payload,
       };
     });
     builder.addCase(fetchAsyncPostComment.fulfilled, (state, action) => {
       return {
         ...state,
+        // 現在のステートを配列で管理して、投稿した内容を配列の最後に追加する
         comments: [...state.comments, action.payload],
       };
     });
     builder.addCase(fetchAsyncPatchLiked.fulfilled, (state, action) => {
       return {
         ...state,
+        // 既存の投稿一覧の配列をmapで確認して更新した内容のみを置き換える
         posts: state.posts.map((post) =>
           post.id === action.payload.id ? action.payload : post
         ),
